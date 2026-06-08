@@ -1,37 +1,21 @@
-console.log('=== POPUP.JS LOADING ===');
-
 const STATUS_VARIANTS = ["success", "error", "info", "hidden"];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log('=== DOMContentLoaded FIRED ===');
-  // Get elements first
   const statusMessageEl = document.getElementById("status-message");
-  
-  // Jobposting UI elements
+
   const jobpostingSection = document.getElementById("jobposting-section");
   const jobpostingHeader = jobpostingSection?.querySelector(".jobposting-header");
   const statusLed = document.getElementById("jobposting-status-led");
   const statusText = document.getElementById("jobposting-status-text");
 
-  // Ensure browserAPI is available
-  console.log('Getting browserAPI...');
   const browserAPI = window.getBrowserAPI();
-  console.log('browserAPI:', browserAPI);
   if (!browserAPI) {
-    console.error('browserAPI is not available');
+    console.error("browserAPI is not available");
     return;
   }
 
-  console.log('DOMContentLoaded - Popup initialized');
-
   replaceI18nPlaceholders();
 
-  // Debug: Check if elements exist
-  console.debug('Jobposting elements found:', {
-    section: jobpostingSection,
-    led: statusLed,
-    text: statusText
-  });
   const jobpostingCurrent = document.getElementById("jobposting-current");
   const jobpostingCurrentKid = document.getElementById("jobposting-current-kid");
   const setActiveBtn = document.getElementById("set-active-jobposting-btn");
@@ -63,33 +47,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   let portalAutomationRefreshTimer = null;
   let currentPortal = null;
 
-  // Update jobposting UI based on current state. The popup only shows
-  // jobposting details when there is a current or pinned jobposting;
-  // the toolbar badge carries the no-jobposting "X" state.
   const updateJobpostingUI = (active, current) => {
-    if (!jobpostingSection) {
-      console.debug('Jobposting section element not found');
-      return;
-    }
-
-    console.debug('updateJobpostingUI called:', { active, current });
+    if (!jobpostingSection) return;
 
     jobpostingSection.classList.remove("hidden");
 
-    const status = current?.status || 'none';
+    const status = current?.status || "none";
     currentTabKid = current?.kid || null;
     currentTabUrl = current?.url || null;
     activeJobpostingUrl = active?.url || null;
     const hasCurrentJobposting = Boolean(currentTabKid);
     const hasActiveJobposting = Boolean(active?.kid);
-    const showCurrentTabStatus = status === 'mismatch' || hasCurrentJobposting;
+    const showCurrentTabStatus = status === "mismatch" || hasCurrentJobposting;
 
     if (!showCurrentTabStatus && !hasActiveJobposting) {
       jobpostingSection.classList.add("hidden");
       jobpostingHeader?.classList.add("hidden");
       if (statusText) statusText.textContent = "";
-      jobpostingCurrent?.classList.add('hidden');
-      jobpostingActive?.classList.add('hidden');
+      jobpostingCurrent?.classList.add("hidden");
+      jobpostingActive?.classList.add("hidden");
       return;
     }
 
@@ -99,17 +75,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (showCurrentTabStatus) {
-      statusLed.className = 'status-led';
+      statusLed.className = "status-led";
       let messageKey;
       let fallbackText;
-      if (status === 'mismatch') {
-        statusLed.classList.add('red');
-        messageKey = 'popupCurrentTabDifferentJobposting';
-        fallbackText = 'Anderes Jobposting in diesem Tab';
+      if (status === "mismatch") {
+        statusLed.classList.add("red");
+        messageKey = "popupCurrentTabDifferentJobposting";
+        fallbackText = "Anderes Jobposting in diesem Tab";
       } else {
-        statusLed.classList.add('green');
-        messageKey = 'popupCurrentTabJobposting';
-        fallbackText = 'Jobposting in diesem Tab';
+        statusLed.classList.add("green");
+        messageKey = "popupCurrentTabJobposting";
+        fallbackText = "Jobposting in diesem Tab";
       }
 
       let statusTextValue = fallbackText;
@@ -118,22 +94,19 @@ document.addEventListener("DOMContentLoaded", async () => {
           const message = browserAPI.i18n.getMessage(messageKey);
           if (message) statusTextValue = message;
         }
-      } catch (e) {
-        console.debug('i18n error:', e);
+      } catch {
+        // ignore i18n errors
       }
 
       statusText.textContent = statusTextValue;
     } else {
-      statusLed.className = 'status-led';
-      statusLed.classList.add('gray');
-      statusText.textContent = '';
+      statusLed.className = "status-led";
+      statusLed.classList.add("gray");
+      statusText.textContent = "";
     }
 
-    // Show current tab jobposting if on jobposting page
-    console.debug('currentTabKid:', currentTabKid);
     if (currentTabKid) {
-      console.debug('Showing jobposting-current section');
-      jobpostingCurrent.classList.remove('hidden');
+      jobpostingCurrent.classList.remove("hidden");
       jobpostingCurrentKid.textContent = currentTabKid;
       jobpostingCurrentKid.onclick = () => {
         if (currentTabUrl) {
@@ -142,13 +115,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       };
     } else {
-      console.debug('Hiding jobposting-current section');
-      jobpostingCurrent.classList.add('hidden');
+      jobpostingCurrent.classList.add("hidden");
     }
 
-    // Show active jobposting info — independent of current tab.
     if (active?.kid) {
-      jobpostingActive.classList.remove('hidden');
+      jobpostingActive.classList.remove("hidden");
       jobpostingActiveKid.textContent = active.kid;
       jobpostingActiveKid.onclick = () => {
         if (activeJobpostingUrl) {
@@ -157,31 +128,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       };
     } else {
-      jobpostingActive.classList.add('hidden');
+      jobpostingActive.classList.add("hidden");
     }
   };
 
-  // Initialize jobposting section.
-  //
-  // Delegates to the shared `computeCurrentJobpostingState` helper
-  // (loaded via popup.html before this script) so the regex /
-  // storage / status logic is not duplicated between popup.js and
-  // background.js.
   const initJobpostingSection = async () => {
     try {
-      if (typeof computeCurrentJobpostingState !== 'function' || !browserAPI) {
-        console.debug('jobposting helper or browserAPI unavailable');
-        jobpostingSection?.classList.remove('hidden');
+      if (typeof computeCurrentJobpostingState !== "function" || !browserAPI) {
+        jobpostingSection?.classList.remove("hidden");
         updateJobpostingUI(null, null);
         return;
       }
 
       const state = await computeCurrentJobpostingState(browserAPI);
-      console.debug('Jobposting state:', state);
       updateJobpostingUI(state.active, state.current);
     } catch (error) {
-      console.error('Failed to initialize jobposting section:', error);
-      jobpostingSection?.classList.remove('hidden');
+      console.error("Failed to initialize jobposting section:", error);
+      jobpostingSection?.classList.remove("hidden");
       updateJobpostingUI(null, null);
     }
   };
@@ -189,7 +152,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const sendAutomationMessage = async (message) => {
     const response = await browserAPI.runtime.sendMessage(message);
     if (!response || response.success === false) {
-      throw new Error(response?.error || "Automation command failed.");
+      throw new Error(response?.error || "Command failed.");
     }
     return response;
   };
@@ -249,10 +212,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const portalLabel = getPortalLabel(portal || currentPortal || run?.portal);
     if (portalAutomationTitle) {
-      portalAutomationTitle.textContent = `${portalLabel} automation`;
-    }
-    if (startPortalAutomationBtn) {
-      startPortalAutomationBtn.textContent = `Start ${portalLabel} automation`;
+      portalAutomationTitle.textContent = portalLabel;
     }
 
     const status = run?.status || "idle";
@@ -342,7 +302,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderAutomationStatus(response.portal || currentPortal || "xing", response.run);
       await refreshAutomationStatus();
     } catch (error) {
-      console.error("Automation command failed:", error);
+      console.error("Command failed:", error);
       setStatus("error", error.message);
     }
   };
@@ -373,56 +333,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     await runAutomationCommand({ type: "STOP_PORTAL_AUTOMATION" });
   });
 
-  // Handle set active jobposting
   if (setActiveBtn) {
-    setActiveBtn.addEventListener('click', async () => {
+    setActiveBtn.addEventListener("click", async () => {
       if (!currentTabKid) return;
-
       try {
         const tabs = await browserAPI.tabs.query({ active: true, currentWindow: true });
         if (!tabs || tabs.length === 0) return;
-
-        // Store active jobposting directly in storage
         await browserAPI.storage.local.set({
-          'active_jobposting': {
+          active_jobposting: {
             kid: currentTabKid,
             url: tabs[0].url,
-            setAt: new Date().toISOString()
-          }
+            setAt: new Date().toISOString(),
+          },
         });
-
-        // Refresh UI
         await initJobpostingSection();
-
-        const successMsg = browserAPI.i18n.getMessage('popupJobpostingSetSuccess') || 'Jobposting gesetzt';
-        setStatus('success', successMsg);
+        const successMsg = browserAPI.i18n.getMessage("popupJobpostingSetSuccess") || "Jobposting gesetzt";
+        setStatus("success", successMsg);
       } catch (error) {
-        console.error('Failed to set active jobposting:', error);
-        const errorMsg = browserAPI.i18n.getMessage('popupJobpostingSetError') || 'Fehler beim Setzen';
-        setStatus('error', errorMsg);
+        console.error("Failed to set active jobposting:", error);
+        const errorMsg = browserAPI.i18n.getMessage("popupJobpostingSetError") || "Fehler beim Setzen";
+        setStatus("error", errorMsg);
       }
     });
   }
 
-  // Handle clear active jobposting
   if (clearActiveBtn) {
-    clearActiveBtn.addEventListener('click', async () => {
+    clearActiveBtn.addEventListener("click", async () => {
       try {
-        // Remove active jobposting directly from storage
-        await browserAPI.storage.local.remove('active_jobposting');
+        await browserAPI.storage.local.remove("active_jobposting");
         await initJobpostingSection();
-
-        const successMsg = browserAPI.i18n.getMessage('popupJobpostingCleared') || 'Zurückgesetzt';
-        setStatus('success', successMsg);
+        const successMsg = browserAPI.i18n.getMessage("popupJobpostingCleared") || "Zurückgesetzt";
+        setStatus("success", successMsg);
       } catch (error) {
-        console.error('Failed to clear active jobposting:', error);
+        console.error("Failed to clear active jobposting:", error);
       }
     });
   }
 
   const setStatus = (variant, message) => {
     if (!statusMessageEl) return;
-    STATUS_VARIANTS.forEach(v => statusMessageEl.classList.remove(v));
+    STATUS_VARIANTS.forEach((v) => statusMessageEl.classList.remove(v));
     const text = message || "";
     statusMessageEl.textContent = text;
     if (!text) {
@@ -433,7 +383,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     statusMessageEl.classList.add(effectiveVariant);
   };
 
-  
   const applyThemePreference = async () => {
     try {
       const themeResult = await browserAPI.storage.sync.get("theme");
@@ -449,24 +398,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  
-  
   document.getElementById("open-options").addEventListener("click", (event) => {
     event.preventDefault();
     browserAPI.runtime.openOptionsPage();
   });
 
   await applyThemePreference();
-
-  // Debug: Check if LED is visible before initialization
-  console.debug('Pre-init LED check:', {
-    led: statusLed,
-    ledVisible: statusLed ? window.getComputedStyle(statusLed).display : 'N/A',
-    ledOpacity: statusLed ? window.getComputedStyle(statusLed).opacity : 'N/A',
-    ledBackground: statusLed ? window.getComputedStyle(statusLed).backgroundColor : 'N/A'
-  });
-
-  console.log('About to call initJobpostingSection...');
   await initJobpostingSection();
   await refreshAutomationStatus();
   portalAutomationRefreshTimer = setInterval(refreshAutomationStatus, 1500);
@@ -475,5 +412,4 @@ document.addEventListener("DOMContentLoaded", async () => {
       clearInterval(portalAutomationRefreshTimer);
     }
   });
-  console.log('initJobpostingSection done');
 });

@@ -311,32 +311,12 @@ body {
   font-size: 12px;
 }
 
-#portal-automation-current {
-  color: var(--text);
-  line-height: 1.4;
-  word-break: break-word;
-}
-
-#portal-automation-counts {
-  color: var(--muted);
-}
-
-#portal-automation-error {
-  padding: 7px 8px;
-  border-radius: 6px;
-  background: var(--error-bg);
-  color: var(--error-text);
-  line-height: 1.4;
-  word-break: break-word;
-}
-
 .portal-automation-actions {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
 }
 
-.jobposting-current code,
 .jobposting-active strong {
   font-family: monospace;
   font-size: 11px;
@@ -526,31 +506,6 @@ body {
 }
 
 .btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  padding: 5px 12px;
-  font-size: 11px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--card-bg);
-  color: var(--muted);
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.06s ease;
-}
-
-.btn-secondary:hover {
-  background: var(--bg);
-  color: var(--text);
-}
-
-.btn-secondary:active {
-  transform: translateY(1px);
-}
-
-.btn-secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
